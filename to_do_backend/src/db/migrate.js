@@ -16,9 +16,19 @@ CREATE TABLE IF NOT EXISTS tasks (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 `;
 
+/**
+ * PUBLIC_INTERFACE
+ * Run migrations once DB is reachable. Throws on error so caller can retry or handle.
+ */
 async function runMigrations() {
-  const pool = await getPool();
-  await pool.query(CREATE_TASKS_TABLE_SQL);
+  try {
+    const pool = await getPool();
+    // A simple ensure-table migration
+    await pool.query(CREATE_TASKS_TABLE_SQL);
+  } catch (err) {
+    console.error('[migrate] Migration error:', err?.message || err);
+    throw err;
+  }
 }
 
 module.exports = { runMigrations };

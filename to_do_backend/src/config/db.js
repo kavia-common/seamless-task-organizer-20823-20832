@@ -28,7 +28,8 @@ async function createPool() {
   } = process.env;
 
   if (!MYSQL_URL || !MYSQL_USER || !MYSQL_PASSWORD || !MYSQL_DB) {
-    // Provide a clear error to orchestrator to supply env vars
+    // Delay throwing until an actual DB operation is attempted by caller.
+    // This allows the HTTP server to start and expose readiness endpoints.
     throw new Error(
       'Missing required database environment variables. Please ensure MYSQL_URL, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB (and optional MYSQL_PORT, MYSQL_CONNECTION_LIMIT) are set in the .env for to_do_backend.'
     );
@@ -46,8 +47,8 @@ async function createPool() {
     namedPlaceholders: true,
   });
 
-  // Quick validation the DB is reachable
-  await pool.query('SELECT 1');
+  // Do not eagerly validate connectivity here; defer to callers (e.g., migrations or models).
+  // This avoids blocking server startup when DB is not yet accepting connections.
 
   global.__mysql_pool = pool;
   return pool;
