@@ -4,10 +4,13 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'My Express API',
+      title: 'To-Do Backend API',
       version: '1.0.0',
-      description: 'A simple Express API documented with Swagger',
-    }
+      description: 'REST API for managing to-do tasks (create, list, update, delete, complete).',
+    },
+    tags: [
+      { name: 'Tasks', description: 'To-do task management' },
+    ],
   },
   apis: ['./src/routes/*.js'], // Path to the API docs
 };
