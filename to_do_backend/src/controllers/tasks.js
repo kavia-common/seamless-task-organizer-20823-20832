@@ -44,8 +44,21 @@ class TasksController {
       const task = await TaskService.create(req.body);
       return res.status(201).json({ status: 'ok', data: task });
     } catch (err) {
+      // Validation errors from zod
       if (err?.issues) {
         return res.status(400).json({ status: 'error', message: 'Validation failed', details: err.issues });
+      }
+      // Common DB connectivity/schema errors
+      const code = err && (err.code || err.errno || err.sqlState);
+      if (code) {
+        // Hide raw SQL but give actionable hint
+        // e.g., ER_NO_SUCH_TABLE, ECONNREFUSED, ER_ACCESS_DENIED_ERROR
+        return res.status(500).json({
+          status: 'error',
+          message: 'Database error while creating task',
+          hint: 'Verify database is reachable and migrations have run.',
+          code: String(code),
+        });
       }
       console.error('Create task error:', err);
       return res.status(500).json({ status: 'error', message: 'Failed to create task' });

@@ -9,17 +9,13 @@ let server;
 
 async function start() {
   try {
-    // Start the HTTP server first so the port is ready for health checks.
+    // Run migrations BEFORE starting the server to ensure DB schema exists.
+    await runMigrations();
+    console.log('Database migrations completed');
+
     server = app.listen(PORT, HOST, () => {
       console.log(`Server running at http://${HOST}:${PORT}`);
     });
-
-    // Kick off migrations in the background. If DB is not yet ready, log and continue.
-    runMigrations()
-      .then(() => console.log('Database migrations completed'))
-      .catch((err) => {
-        console.error('Database migration failed (continuing to serve):', err?.message || err);
-      });
 
     // Graceful shutdown
     process.on('SIGTERM', () => {
@@ -30,7 +26,8 @@ async function start() {
       });
     });
   } catch (err) {
-    console.error('Failed to start server:', err?.message || err);
+    // Fail fast if we cannot prepare the database; this prevents serving broken API.
+    console.error('Failed to start server (DB not ready or migration failed):', err?.message || err);
     process.exit(1);
   }
 }

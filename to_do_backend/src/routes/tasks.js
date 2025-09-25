@@ -30,6 +30,36 @@ const router = express.Router();
  */
 router.get('/', tasksController.list.bind(tasksController));
 
+// Readiness probe for tasks DB connectivity
+/**
+ * @swagger
+ * /api/tasks/_ready:
+ *   get:
+ *     tags: [Tasks]
+ *     summary: Check tasks DB readiness
+ *     description: Returns ok if the backend can reach the database and the tasks table exists.
+ *     responses:
+ *       200:
+ *         description: DB is ready
+ *       500:
+ *         description: DB is not ready
+ */
+router.get('/_ready', async (req, res) => {
+  const TaskModel = require('../models/taskModel');
+  try {
+    // Execute a harmless list query limited to 1 row
+    await TaskModel.list({ q: undefined });
+    return res.status(200).json({ status: 'ok' });
+  } catch (e) {
+    return res.status(500).json({
+      status: 'error',
+      message: 'DB not ready',
+      hint: 'Ensure DB env vars are set and migrations completed.',
+      code: e?.code || undefined,
+    });
+  }
+});
+
 /**
  * @swagger
  * /api/tasks/{id}:
